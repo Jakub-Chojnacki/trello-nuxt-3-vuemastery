@@ -10,7 +10,7 @@ type TProps = {
 
 const { column, columnIndex } = defineProps<TProps>()
 
-const { deleteColumn, addTask, moveTask } = useBoardStore();
+const { deleteColumn, addTask, moveTask, moveColumn } = useBoardStore();
 const router = useRouter()
 
 const editNameState = ref(false)
@@ -39,28 +39,51 @@ const pickupTask = (event: DragEvent, {
     fromTaskIndex: number;
     fromColumnIndex: number;
 }): void => {
-    //There seems to be a problem with ts and dnd API so we have to use !.
-    event.dataTransfer!.effectAllowed = 'move';
-    event.dataTransfer!.dropEffect = 'move'
-    event.dataTransfer?.setData('from-column-index', fromColumnIndex.toString());
-    event.dataTransfer?.setData('from-task-index', fromTaskIndex.toString());
+    if (event.dataTransfer) {
+        const { dataTransfer } = event
+        dataTransfer.effectAllowed = 'move';
+        dataTransfer.dropEffect = 'move'
+        dataTransfer.setData('type', 'task')
+        dataTransfer.setData('from-column-index', fromColumnIndex.toString());
+        dataTransfer.setData('from-task-index', fromTaskIndex.toString());
+    }
 }
 
-const dropTask = (event: DragEvent, toColumnIndex: number): void => {
-    const fromColumnIndex = event.dataTransfer!.getData('from-column-index')
-    const fromTaskIndex = event.dataTransfer!.getData('from-task-index')
+const pickupColumn = (event: DragEvent, fromColumnIndex: number): void => {
+    if (event.dataTransfer) {
+        const { dataTransfer } = event
+        dataTransfer.effectAllowed = 'move';
+        dataTransfer.dropEffect = 'move'
+        dataTransfer.setData('type', 'column')
+        dataTransfer.setData('from-column-index', fromColumnIndex.toString());
+    }
+}
 
-    moveTask({
-        taskIndex: Number(fromTaskIndex),
-        fromColumnIndex: Number(fromColumnIndex),
-        toColumnIndex
-    })
+function dropItem(event: DragEvent, toColumnIndex: number) {
+    const type = event.dataTransfer!.getData('type')
+    const fromColumnIndex = event.dataTransfer!.getData('from-column-index')
+
+    if (type === 'task') {
+        const fromTaskIndex = event.dataTransfer!.getData('from-task-index')
+
+        moveTask({
+            taskIndex: +fromTaskIndex,
+            fromColumnIndex: +fromColumnIndex,
+            toColumnIndex
+        })
+    } else if (type === 'column') {
+        moveColumn({
+            fromColumnIndex: +fromColumnIndex,
+            toColumnIndex
+        })
+    }
 }
 
 </script>
 
 <template>
-    <UContainer class="column" @drageneter.prevent @dragover.prevent @drop.stop="dropTask($event, columnIndex)">
+    <UContainer class="column" draggable="true" @dragstart.self="pickupColumn($event, columnIndex)" @drageneter.prevent
+        @dragover.prevent @drop.stop="dropItem($event, columnIndex)">
         <div class="column-header mb-4">
             <div>
                 <UInput type="text" v-model="column.name" v-if="editNameState" />
