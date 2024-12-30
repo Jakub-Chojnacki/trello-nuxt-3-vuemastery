@@ -8,7 +8,7 @@ type TProps = {
     columnIndex: number;
 }
 
-const { column, columnIndex } = defineProps < TProps > ()
+const { column, columnIndex } = defineProps<TProps>()
 
 const { deleteColumn, addTask, moveTask } = useBoardStore();
 const router = useRouter()
@@ -39,25 +39,24 @@ const pickupTask = (event: DragEvent, {
     fromTaskIndex: number;
     fromColumnIndex: number;
 }): void => {
-    // @ts-ignore:
-    event.dataTransfer.effectAllowed = 'move';
-    // @ts-ignore:
-    event.dataTransfer.dropEffect = 'move'
+    //There seems to be a problem with ts and dnd API so we have to use !.
+    event.dataTransfer!.effectAllowed = 'move';
+    event.dataTransfer!.dropEffect = 'move'
     event.dataTransfer?.setData('from-column-index', fromColumnIndex.toString());
     event.dataTransfer?.setData('from-task-index', fromTaskIndex.toString());
 }
 
-const dropTask = (event: DragEvent, toColumnIndex:number): void => {
-    const fromColumnIndex = event.dataTransfer?.getData('from-column-index')
-    const fromTaskIndex = event.dataTransfer?.getData('from-task-index')
+const dropTask = (event: DragEvent, toColumnIndex: number): void => {
+    const fromColumnIndex = event.dataTransfer!.getData('from-column-index')
+    const fromTaskIndex = event.dataTransfer!.getData('from-task-index')
 
     moveTask({
-        taskIndex:fromTaskIndex,
-        fromColumnIndex,
+        taskIndex: Number(fromTaskIndex),
+        fromColumnIndex: Number(fromColumnIndex),
         toColumnIndex
     })
 }
-    
+
 </script>
 
 <template>
